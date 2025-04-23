@@ -30,8 +30,7 @@ async def button(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await query.answer()
     period = query.data
     filtered = events if period == "week" else events  # Упрощённая фильтрация
-    text = "🗓️ События:
-"
+    text = "🗓️ События:\n"
     for event in filtered:
         text += f"{event['color']} {event['date']} — {event['title']} ({event['user']})\n"
     await query.edit_message_text(text=text)
