@@ -1,9 +1,3 @@
-# Обновим проект: добавим кнопки для добавления и удаления событий
-
-import zipfile
-
-# Код main.py с кнопками "Добавить событие" и "Удалить событие"
-enhanced_main_py = """\
 import os
 from dotenv import load_dotenv
 from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
@@ -92,16 +86,3 @@ if __name__ == '__main__':
     app.add_handler(CommandHandler("start", start))
     app.add_handler(conv_handler)
     app.run_polling()
-"""
-
-# Сохраняем в новый архив
-enhanced_zip_path = "/mnt/data/telegram_calendar_bot_with_buttons.zip"
-
-with zipfile.ZipFile(enhanced_zip_path, 'w') as zipf:
-    zipf.writestr("telegram_calendar_bot/main.py", enhanced_main_py)
-    zipf.writestr("telegram_calendar_bot/.env.example", "BOT_TOKEN=your_telegram_bot_token_here\n")
-    zipf.writestr("telegram_calendar_bot/requirements.txt", "python-telegram-bot==20.3\npython-dotenv\n")
-    zipf.writestr("telegram_calendar_bot/README.md", "# Telegram Calendar Bot\n\nКалендарь с добавлением и удалением событий через кнопки.")
-    zipf.writestr("telegram_calendar_bot/.gitignore", ".env\n")
-
-enhanced_zip_path
