@@ -53,8 +53,8 @@ async def view_calendar(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await query.edit_message_text(text=text)
 
 async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
-	query = update.callback_query
-    	await query.answer()
+    query = update.callback_query
+    await query.answer()
     data = update.callback_query.data
     if data == 'view_calendar':
         await view_calendar(update, context)
@@ -141,7 +141,7 @@ if __name__ == '__main__':
             EDITING: [MessageHandler(filters.TEXT & ~filters.COMMAND, edit_event)],
         },
         fallbacks=[CommandHandler('cancel', cancel)],
-	per_message=True,
+    per_message=True,
     )
     app.add_handler(CommandHandler("start", start))
     app.add_handler(conv_handler)
