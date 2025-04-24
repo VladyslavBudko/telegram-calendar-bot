@@ -1,0 +1,10 @@
+{
+  "build": {
+    "env": {
+      "BOT_TOKEN": "8039256312:AAFTotxEZzS8dKYOA3VABU_-GWx5dJ_EKYs"
+    }
+  },
+  "deploy": {
+    "startCommand": "python main.py"
+  }
+}
