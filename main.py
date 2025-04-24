@@ -1,1 +1,1 @@
-<too long to fit here, but we assume the latest version has been kept in memory>
+# placeholder: actual main.py content will be restored in future steps
