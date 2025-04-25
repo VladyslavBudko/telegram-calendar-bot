@@ -86,8 +86,7 @@ async def select_event(update: Update, context: ContextTypes.DEFAULT_TYPE):
     context.user_data['selected_event'] = idx
     event = events[idx]
     user = update.effective_user.first_name
-    text = f"{event['color']} {event['date']}
-{event['title']} ({event['user']})"
+    text = f"{event['color']} {event['date']} — {event['title']} ({event['user']})"
     if event['comments']:
         text += "
 💬 Комментарии:
