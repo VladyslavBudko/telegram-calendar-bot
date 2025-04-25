@@ -94,7 +94,11 @@ async def view_calendar(update: Update, context: ContextTypes.DEFAULT_TYPE, peri
         text = f"{e['color']} {e['date']} — {e['title']} ({e['user']})"
         keyboard.append([InlineKeyboardButton(text, callback_data=f"select_{events.index(e)}")])
     keyboard += period_buttons()
+    try:
     await query.edit_message_text("🗓️ События:", reply_markup=InlineKeyboardMarkup(keyboard))
+except telegram.error.BadRequest as e:
+    if "Message is not modified" not in str(e):
+        raise
 
 async def select_event(update: Update, context: ContextTypes.DEFAULT_TYPE):
     query = update.callback_query
