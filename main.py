@@ -21,7 +21,7 @@ def load_events():
         return []
 
 def save_events(events):
-    with open(EVENTS_FILE, "w", encoding="utf-8") as f:filtered.sort
+    with open(EVENTS_FILE, "w", encoding="utf-8") as f:
         json.dump(events, f, ensure_ascii=False, indent=2)
 
 def load_mods():
