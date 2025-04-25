@@ -21,7 +21,7 @@ def load_events():
         return []
 
 def save_events(events):
-    with open(EVENTS_FILE, "w", encoding="utf-8") as f:
+    with open(EVENTS_FILE, "w", encoding="utf-8") as f:filtered.sort
         json.dump(events, f, ensure_ascii=False, indent=2)
 
 def load_mods():
@@ -88,7 +88,7 @@ async def view_calendar(update: Update, context: ContextTypes.DEFAULT_TYPE, peri
                 filtered.append((d, event))
         except:
             continue
-    filtered.sort()
+    filtered.sort(key=lambda x: x[0])
     keyboard = []
     for _, e in filtered:
         text = f"{e['color']} {e['date']} — {e['title']} ({e['user']})"
