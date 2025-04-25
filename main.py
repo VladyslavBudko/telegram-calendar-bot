@@ -1,3 +1,5 @@
+
+# Телеграм-бот с кнопками, событиями, сохранением в JSON и фильтрацией по периоду
 import os
 import json
 from datetime import datetime, timedelta
@@ -10,7 +12,6 @@ from telegram.ext import (
 
 load_dotenv()
 BOT_TOKEN = os.getenv("BOT_TOKEN")
-
 EVENTS_FILE = "events.json"
 
 def load_events():
@@ -25,7 +26,6 @@ def save_events(events):
         json.dump(events, f, ensure_ascii=False, indent=2)
 
 events = load_events()
-
 ADDING, REMOVING, COMMENTING, EDITING, SELECTING = range(5)
 
 def main_menu():
@@ -86,13 +86,11 @@ async def select_event(update: Update, context: ContextTypes.DEFAULT_TYPE):
     context.user_data['selected_event'] = idx
     event = events[idx]
     user = update.effective_user.first_name
-    text = f"{event['color']} {event['date']} — {event['title']} ({event['user']})"
+    text = f"{event['color']} {event['date']}\n{event['title']} ({event['user']})"
     if event['comments']:
-        text += "
-💬 Комментарии:
-" + "
-".join(f"- {c}" for c in event['comments'])
-
+        text += "\n💬 Комментарии:\n"
+        for c in event['comments']:
+            text += f"- {c}\n"
     buttons = [[InlineKeyboardButton("💬 Комментировать", callback_data='comment_event')]]
     if event['user'] == user:
         buttons.insert(0, [InlineKeyboardButton("✏️ Редактировать", callback_data='edit_event')])
