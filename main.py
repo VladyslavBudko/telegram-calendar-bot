@@ -1,3 +1,4 @@
+
 import os
 import json
 from datetime import datetime, timedelta
@@ -7,6 +8,7 @@ from telegram.ext import (
     ApplicationBuilder, CommandHandler, CallbackQueryHandler,
     MessageHandler, filters, ContextTypes, ConversationHandler
 )
+import telegram
 
 load_dotenv()
 BOT_TOKEN = os.getenv("BOT_TOKEN")
@@ -57,17 +59,6 @@ def period_buttons():
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await update.message.reply_text("Выберите действие:", reply_markup=main_menu())
 
-async def event_menu(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    query = update.callback_query
-    await query.answer()
-    buttons = [
-        [InlineKeyboardButton("🌍 Событие для всех", callback_data="public_event")],
-        [InlineKeyboardButton("👤 Только для меня", callback_data="private_event")],
-        [InlineKeyboardButton("🎖 Назначить модератора", callback_data="promote_user")],
-        [InlineKeyboardButton("🔁 Старт", callback_data="back_to_main")]
-    ]
-    await query.edit_message_text("Выберите тип события:", reply_markup=InlineKeyboardMarkup(buttons))
-
 async def view_calendar(update: Update, context: ContextTypes.DEFAULT_TYPE, period="month"):
     query = update.callback_query
     await query.answer()
@@ -94,11 +85,11 @@ async def view_calendar(update: Update, context: ContextTypes.DEFAULT_TYPE, peri
         text = f"{e['color']} {e['date']} — {e['title']} ({e['user']})"
         keyboard.append([InlineKeyboardButton(text, callback_data=f"select_{events.index(e)}")])
     keyboard += period_buttons()
-try:
-    await query.edit_message_text("🗓️ События:", reply_markup=InlineKeyboardMarkup(keyboard))
-except telegram.error.BadRequest as e:
-    if "Message is not modified" not in str(e):
-        raise
+    try:
+        await query.edit_message_text("🗓️ События:", reply_markup=InlineKeyboardMarkup(keyboard))
+    except telegram.error.BadRequest as e:
+        if "Message is not modified" not in str(e):
+            raise
 
 async def select_event(update: Update, context: ContextTypes.DEFAULT_TYPE):
     query = update.callback_query
