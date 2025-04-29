@@ -96,7 +96,7 @@ async def select_event(update: Update, context: ContextTypes.DEFAULT_TYPE):
         return
     text = f"{e['color']} {e['date']}\n{e['title']} ({e['user']})"
     if e.get("comments"):
-        text += "\\n💬 Комментарии:\\n" + "\\n".join(f"- {c}" for c in e["comments"])
+        text += "\n💬 Комментарии:\n" + "\n".join(f"- {c}" for c in e["comments"])
     user = update.effective_user.first_name
     buttons = [[InlineKeyboardButton("💬 Комментировать", callback_data="comment_event")]]
     if e["user"] == user or await is_moderator(user):
