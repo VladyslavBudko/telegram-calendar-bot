@@ -41,9 +41,51 @@ async def is_moderator(user: str) -> bool:
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await update.message.reply_text("Выберите действие:", reply_markup=main_menu())
 
+async def view_calendar(update: Update, context: ContextTypes.DEFAULT_TYPE, period="month"):
+    query = update.callback_query
+    try:
+        await query.answer()
+    except telegram.error.BadRequest as e:
+        if "Query is too old" not in str(e):
+            raise
+
+    now = datetime.now()
+    user = update.effective_user.first_name
+    raw_events = await events_collection.find().to_list(length=None)
+    filtered = []
+    for ev in raw_events:
+        try:
+            d = datetime.strptime(ev["date"], "%Y.%m.%d")
+        except:
+            continue
+        if ev["visibility"] != "public" and ev["user"] != user:
+            continue
+        if period == "week" and now <= d <= now + timedelta(weeks=1):
+            filtered.append((d, ev))
+        elif period == "month" and now.month == d.month and now.year == d.year:
+            filtered.append((d, ev))
+        elif period == "year" and now.year == d.year:
+            filtered.append((d, ev))
+    filtered.sort(key=lambda x: x[0])
+
+    keyboard = []
+    for _, ev in filtered:
+        label = f"{ev['color']} {ev['date']} — {ev['title']} ({ev['user']})"
+        keyboard.append([InlineKeyboardButton(label, callback_data=f"select_{ev['_id']}")])
+    keyboard += period_buttons()
+    try:
+        await query.edit_message_text("🗓️ События:", reply_markup=InlineKeyboardMarkup(keyboard))
+    except telegram.error.BadRequest as e:
+        if "Message is not modified" not in str(e):
+            raise
+
 async def event_menu(update: Update, context: ContextTypes.DEFAULT_TYPE):
     query = update.callback_query
-    await query.answer()
+    try:
+        await query.answer()
+    except telegram.error.BadRequest:
+        pass
+
     user = update.effective_user.first_name
     buttons = [
         [InlineKeyboardButton("🌍 Событие для всех", callback_data="public_event")],
@@ -54,49 +96,24 @@ async def event_menu(update: Update, context: ContextTypes.DEFAULT_TYPE):
     buttons.append([InlineKeyboardButton("🔁 Старт", callback_data="back_to_main")])
     await query.edit_message_text("Выберите тип события:", reply_markup=InlineKeyboardMarkup(buttons))
 
-async def view_calendar(update: Update, context: ContextTypes.DEFAULT_TYPE, period="month"):
-    query = update.callback_query
-    await query.answer()
-    now = datetime.now()
-    user = update.effective_user.first_name
-    cursor = events_collection.find()
-    events = []
-    async for event in cursor:
-        try:
-            d = datetime.strptime(event["date"], "%Y.%m.%d")
-            if event["visibility"] == "public" or event["user"] == user:
-                if period == "week" and now <= d <= now + timedelta(weeks=1):
-                    events.append((d, event))
-                elif period == "month" and now.month == d.month and now.year == d.year:
-                    events.append((d, event))
-                elif period == "year" and now.year == d.year:
-                    events.append((d, event))
-        except:
-            continue
-    events.sort(key=lambda x: x[0])
-    keyboard = []
-    for _, e in events:
-        label = f"{e['color']} {e['date']} — {e['title']} ({e['user']})"
-        keyboard.append([InlineKeyboardButton(label, callback_data=f"select_{str(e['_id'])}")])
-    keyboard += period_buttons()
-    try:
-        await query.edit_message_text("🗓️ События:", reply_markup=InlineKeyboardMarkup(keyboard))
-    except telegram.error.BadRequest as e:
-        if "Message is not modified" not in str(e):
-            raise
-
 async def select_event(update: Update, context: ContextTypes.DEFAULT_TYPE):
     query = update.callback_query
-    await query.answer()
+    try:
+        await query.answer()
+    except telegram.error.BadRequest:
+        pass
+
     event_id = query.data.split("_")[1]
     context.user_data["selected_event"] = event_id
     e = await events_collection.find_one({"_id": ObjectId(event_id)})
     if not e:
         await query.edit_message_text("Событие не найдено.")
         return
+
     text = f"{e['color']} {e['date']}\n{e['title']} ({e['user']})"
     if e.get("comments"):
         text += "\n💬 Комментарии:\n" + "\n".join(f"- {c}" for c in e["comments"])
+
     user = update.effective_user.first_name
     buttons = [[InlineKeyboardButton("💬 Комментировать", callback_data="comment_event")]]
     if e["user"] == user or await is_moderator(user):
@@ -106,7 +123,9 @@ async def select_event(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await query.edit_message_text(text=text, reply_markup=InlineKeyboardMarkup(buttons))
 
 async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    data = update.callback_query.data
+    query = update.callback_query
+    data = query.data
+
     if data == "view_calendar":
         return await view_calendar(update, context)
     if data == "event_menu":
@@ -119,19 +138,19 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
         return await select_event(update, context)
     if data in ("public_event", "private_event"):
         context.user_data["visibility"] = "public" if data == "public_event" else "private"
-        await update.callback_query.edit_message_text("Введите: дата (ГГГГ.ММ.ДД) название события")
+        await query.edit_message_text("Введите: дата (ГГГГ.ММ.ДД) название события")
         return ADDING
     if data == "comment_event":
-        await update.callback_query.edit_message_text("Введите комментарий:")
+        await query.edit_message_text("Введите комментарий:")
         return COMMENTING
     if data == "edit_event":
-        await update.callback_query.edit_message_text("Введите новую дату и название:")
+        await query.edit_message_text("Введите новую дату и название:")
         return EDITING
     if data == "remove_event":
-        await update.callback_query.edit_message_text("Введите 'да', чтобы удалить:")
+        await query.edit_message_text("Введите 'да', чтобы удалить:")
         return REMOVING
     if data == "promote_user":
-        await update.callback_query.edit_message_text("Введите имя нового модератора:")
+        await query.edit_message_text("Введите имя нового модератора:")
         return PROMOTING
 
 async def add_event(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -221,7 +240,8 @@ async def cancel(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 if __name__ == "__main__":
     app = ApplicationBuilder().token(BOT_TOKEN).build()
-    conv = ConversationHandler(
+
+    conv_handler = ConversationHandler(
         entry_points=[CallbackQueryHandler(button_handler)],
         states={
             ADDING: [MessageHandler(filters.TEXT & ~filters.COMMAND, add_event)],
@@ -231,8 +251,10 @@ if __name__ == "__main__":
             PROMOTING: [MessageHandler(filters.TEXT & ~filters.COMMAND, promote_user)],
             SELECTING: [CallbackQueryHandler(button_handler)],
         },
-        fallbacks=[CommandHandler("cancel", cancel)]
+        fallbacks=[CommandHandler("cancel", cancel)],
+        per_message=False  # ← для PTB > 20.0 (и чтобы убрать предупреждение)
     )
+
     app.add_handler(CommandHandler("start", start))
-    app.add_handler(conv)
+    app.add_handler(conv_handler)
     app.run_polling()
