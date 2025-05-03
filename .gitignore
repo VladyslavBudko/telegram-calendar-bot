@@ -1,1 +1,23 @@
+# VS Code
+.vscode/
+
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+*.pdb
+
+# Virtual environments
+env/
+venv/
+ENV/
+.venv/
+
+# Secrets and configs
 .env
+.env.*
+
+# OS-specific
+.DS_Store
+Thumbs.db
